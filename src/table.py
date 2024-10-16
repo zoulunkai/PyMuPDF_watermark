@@ -1371,6 +1371,9 @@ class Table:
         """Output table content as a string in Github-markdown format.
 
         If clean is true, markdown syntax is removed from cell content."""
+
+        #Lunkai: watermark text could mess up the markdown content, so I made some hacks.
+        
         output = "|"
 
         # generate header string and MD underline
@@ -1515,6 +1518,9 @@ class Table:
         spans = []  # the text spans inside clip
         for b in page.get_text("dict", clip=clip, flags=TEXTFLAGS_TEXT)["blocks"]:
             for l in b["lines"]:
+                # Lunkai: ignore non-horizental and non-vertical text from table header
+                if (l['dir'][0] * l['dir'][1]) != 0:
+                    continue
                 for s in l["spans"]:
                     if (
                         not s["flags"] & 1 and s["text"].strip()
@@ -1610,6 +1616,11 @@ class Table:
         if select == []:  # nothing left over: return first row
             return header_top_row
 
+        return header_top_row
+        # Lunkai:
+        # The code below cannot handle watermark text, so we simply do not use it.
+        #
+        
         hdr_bbox = +clip  # compute the header cells
         hdr_bbox.y0 = select[-1]  # hdr_bbox top is smallest top coord of words
         hdr_cells = [
@@ -1894,6 +1905,10 @@ def make_chars(page, clip=None):
         for line in block["lines"]:
             ldir = line["dir"]  # = (cosine, sine) of angle
             ldir = (round(ldir[0], 4), round(ldir[1], 4))
+            # Lunkai: Drop non-horizental and non-vertical texts from the table
+            if (ldir[0] * ldir[1]) != 0:
+                continue
+
             matrix = Matrix(ldir[0], -ldir[1], ldir[1], ldir[0], 0, 0)
             if ldir[1] == 0:
                 upright = True
